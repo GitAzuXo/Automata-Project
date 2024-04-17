@@ -1,0 +1,17 @@
+States: 0 1 2 3 4 5 6 7
+Alphabet: a b ε
+Start: 0
+Accept: 7
+Transitions:
+0 ε 1
+0 ε 4
+1 a 2
+2 b 1
+1 ε 3
+2 a 3
+3 b 3
+3 ε 7
+4 b 5
+5 b 6
+6 ε 4
+6 ε 7

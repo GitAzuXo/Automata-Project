@@ -30,6 +30,7 @@ class FiniteAutomaton:
     def to_truth_table(self):
         table = PrettyTable()
         table.field_names = ["State"] + sorted(self.alphabet)
+        table.field_names = [s.replace("Îµ", "ε") for s in table.field_names]
 
         for state in sorted(self.states):
             if state in self.start_state and state in self.accept_states:
@@ -72,7 +73,7 @@ class FiniteAutomaton:
         if fa.is_standard():
             return fa
         
-        new_start_state = "q0_new"
+        new_start_state = "i"
         fa.add_state(new_start_state)
 
         # Ajouter des transitions du nouvel état initial vers chaque état initial d'origine avec les mêmes symboles
@@ -86,16 +87,96 @@ class FiniteAutomaton:
         fa.start_state = {new_start_state}
 
         return fa
+    
 
+    def epsilon_closure(self, state):
+        closure = {state}  # Include the initial state in the closure
+        stack = [state]    # Initialize a stack with the initial state
 
+        # Perform depth-first search to find all states reachable via epsilon transitions
+        while stack:
+            current_state = stack.pop()
+            transitions = self.transitions.get(current_state, {})
+            epsilon_transitions = transitions.get('Îµ', set())  # Retrieve epsilon transitions
+            for next_state in epsilon_transitions:
+                if next_state not in closure:
+                    closure.add(next_state)
+                    stack.append(next_state)
+
+        return closure
 
     
     def is_deterministic(self):
         for state, transitions in self.transitions.items():
+            # Vérifier s'il y a plus d'une transition pour un symbole
             for symbol in self.alphabet:
-                if transitions.get(symbol) is None:
+                if symbol in transitions and len(transitions[symbol]) > 1:
                     return False
+            # Vérifier s'il y a une transition vide
+            if 'Îµ' in transitions:
+                return False
         return True
+
+
+    def determinize(self):
+        if self.is_deterministic():
+            return self
+
+        new_fa = FiniteAutomaton()
+
+        # Compute epsilon closures for all states
+        epsilon_closures = {}
+        for state in self.states:
+            epsilon_closures[state] = self.epsilon_closure(state)
+
+        # Compute epsilon closure of start state
+        start_closure = self.epsilon_closure(next(iter(self.start_state)))
+
+        # Initialize variables for the determinization process
+        state_mapping = {frozenset(start_closure): 'q0'}
+        queue = [frozenset(start_closure)]
+        visited = set()
+
+        while queue:
+            current_states = queue.pop(0)
+            visited.add(current_states)
+
+            # Check if the current set of states is an accept state
+            if any(state in self.accept_states for state in current_states):
+                new_fa.add_accept_state(state_mapping[current_states])
+
+            for symbol in self.alphabet:
+                next_states = set()
+                for state in current_states:
+                    transitions = self.transitions.get(state, {})
+                    if symbol in transitions:
+                        next_states.update(transitions[symbol])  # Exclude epsilon transitions
+
+                # Compute the epsilon closure of the next states
+                next_states_epsilon = set()
+                for state in next_states:
+                    next_states_epsilon.update(epsilon_closures[state])
+
+                if next_states_epsilon:
+                    next_state_frozen = frozenset(next_states_epsilon)
+                    if next_state_frozen not in state_mapping:
+                        new_state_name = f'q{len(state_mapping)}'
+                        state_mapping[next_state_frozen] = new_state_name
+                        queue.append(next_state_frozen)
+                        new_fa.add_state(new_state_name)
+                        if any(state in self.accept_states for state in next_state_frozen):
+                            new_fa.add_accept_state(new_state_name)
+
+                    new_fa.add_transition(state_mapping[current_states], symbol, state_mapping[next_state_frozen])
+
+        # Set the start state of the new automaton
+        new_fa.add_start_state('q0')
+
+        return new_fa
+
+
+
+
 
     def is_complete(self):
         for state in self.states:
@@ -155,12 +236,15 @@ def read_fa_from_file(filename):
 
 
 # Example usage
-fa = read_fa_from_file("fa.txt")
+fa = read_fa_from_file("automatas/31.txt")
 print(fa.to_truth_table())
 print(fa.fa_type())
 fa.standardize()
 print(fa.to_truth_table())
 print(fa.fa_type())
 fa.complete()
+print(fa.to_truth_table())
+print(fa.fa_type())
+fa.determinize()
 print(fa.to_truth_table())
 print(fa.fa_type())

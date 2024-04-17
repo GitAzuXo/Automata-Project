@@ -1,0 +1,6 @@
+States: 0
+Alphabet: a
+Start: 0
+Accept: 0
+Transitions:
+0 a 0

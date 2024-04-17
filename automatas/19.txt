@@ -1,0 +1,10 @@
+States: 0 1 2
+Alphabet: a
+Start: 1
+Accept: 0
+Transitions:
+1 a 2
+2 a 0
+0 a 0
+
+
