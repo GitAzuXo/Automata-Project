@@ -1,0 +1,15 @@
+States: 0 1 2 3 4 5 6 
+Alphabet: a b ε
+Start: 0
+Accept: 6
+Transitions:
+0 ε 1
+0 ε 4
+1 a 2
+1 ε 2
+2 b 3
+3 ε 2
+3 ε 6
+4 b 5
+5 ε 4
+5 ε 6

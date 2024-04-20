@@ -67,6 +67,19 @@ class FiniteAutomaton:
             fa.add_transition(sink_state, symbol, sink_state)
 
         return fa
+    
+
+    def recognize_word(self, word):
+        current_states = self.start_state
+        for symbol in word:
+            next_states = set()
+            for state in current_states:
+                transitions = self.transitions.get(state, {})
+                next_states.update(transitions.get(symbol, []))
+            current_states = next_states
+
+        # Check if any of the final states are reached after processing the word
+        return any(state in self.accept_states for state in current_states)
 
     
     def standardize(fa):
@@ -236,15 +249,5 @@ def read_fa_from_file(filename):
 
 
 # Example usage
-fa = read_fa_from_file("automatas/31.txt")
-print(fa.to_truth_table())
-print(fa.fa_type())
-fa.standardize()
-print(fa.to_truth_table())
-print(fa.fa_type())
-fa.complete()
-print(fa.to_truth_table())
-print(fa.fa_type())
-fa.determinize()
-print(fa.to_truth_table())
-print(fa.fa_type())
+fa = read_fa_from_file("automatas/07.txt")
+print(fa.recognize_word("aaaaaa"))
